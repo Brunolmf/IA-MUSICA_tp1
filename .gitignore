@@ -1,0 +1,4 @@
+.musica/
+.venv/
+__pycache__/
+*.py[cod]
