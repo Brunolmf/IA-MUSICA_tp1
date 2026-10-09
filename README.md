@@ -22,7 +22,7 @@ resultados_experimentos/
 - `main_ternario.py`: representação, fitness e operadores do algoritmo genético.
 - `music_ternario.py`: extração de eventos musicais e exportação MIDI.
 - `midi_para_wav.py`: conversão para áudio com FluidSynth.
-- `experimentos.py`: comparação de seeds e taxas de mutação.
+- `experimentos.py`: execução dos experimentos.
 - `test_experimentos.py`: testes da execução dos experimentos.
 
 ## Instalação
@@ -61,8 +61,7 @@ basta um reprodutor de áudio.
 .musica/bin/python main_ternario.py
 ```
 
-O programa usa seed `42`, executa 100 gerações e mostra o diagnóstico do
-melhor indivíduo. Salva `melodia_blues_ternario.mid` e
+O programa salva `melodia_blues_ternario.mid` e
 `fitness_evolution_ternario.png` na pasta do projeto. O gráfico também é
 exibido em uma janela; feche-a para terminar a execução.
 
@@ -85,53 +84,7 @@ Substitua o caminho do SoundFont por um arquivo existente. A execução normal
 substitui seus arquivos MIDI e PNG; a conversão substitui o WAV de destino.
 Depois de gerar um novo MIDI, converta-o novamente para atualizar o áudio.
 
-## Representação e algoritmo
-
-Cada indivíduo tem 144 genes: 12 compassos com 12 posições por compasso.
-Cada posição dura exatamente 1/3 de tempo, completando 4 tempos por compasso.
-
-| Gene | Significado |
-| --- | --- |
-| `60` a `72` | Ataque de uma nota MIDI, de C4 a C5. |
-| `PAUSA = -1` | Silêncio; encerra a nota ativa. |
-| `HOLD = -2` | Prolonga a nota ativa por mais uma posição. |
-
-Por exemplo, `60, HOLD, 67` gera um C4 com duração de 2/3 de tempo seguido
-de um G4 com duração de 1/3 de tempo. Repetir o número de uma nota cria
-outro ataque. O reparo dos indivíduos substitui sustentações sem nota ativa
-por notas válidas. A extração de eventos é compartilhada pelo GA e pelo MIDI.
-
-A melodia é monofônica. A avaliação considera a escala blues de C
-(C, Eb, F, F#, G e Bb) e a progressão fixa:
-
-```text
-| C7 | F7 | C7 | C7 | F7 | F7 | C7 | C7 | G7 | F7 | C7 | G7 |
-```
-
-A população inicial é aleatória. A seleção usa torneios, o elitismo preserva
-os melhores indivíduos e o crossover faz cortes entre compassos. A mutação
-altera genes para notas, pausas ou sustentações. A execução para após
-100 gerações.
-
-| Parâmetro | Valor padrão |
-| --- | --- |
-| População | 100 |
-| Gerações | 100 |
-| Tamanho do torneio | 3 |
-| Elite | 5 |
-| Taxa de crossover | 0,8 |
-| Taxa de mutação por gene | 0,05 |
-| Probabilidade de pausa | 0,10 |
-| Probabilidade de HOLD | 0,20 |
-
-Os parâmetros ficam no início de `main_ternario.py`. O fitness combina
-harmonia, movimento, repetição, ritmo, durações, frases, motivos rítmicos e
-resolução. Os pesos ficam em `PESOS_FITNESS`; as faixas desejadas de ataques
-por compasso ficam em `DENSIDADE_ALVO`. São preferências da avaliação.
-O diagnóstico mostra as contribuições dos componentes e as distribuições
-de durações, pausas, sustentações e ataques.
-
-### Exportação MIDI
+## Exportação MIDI
 
 A configuração atual usa piano, andamento de 100 BPM e duas voltas da mesma
 melodia, totalizando 24 compassos. O acompanhamento está ativado nas chamadas
@@ -154,48 +107,24 @@ acompanhamento, essa opção não afeta o MIDI.
 .musica/bin/python experimentos.py mutacao
 ```
 
-- **Seeds:** usa `42`, `123` e `999`, com mutação `0.05` e os demais parâmetros
-  iguais. A seed controla a aleatoriedade; não é um hiperparâmetro do GA.
-- **Mutação:** usa taxas `0.01`, `0.05` e `0.15`, reiniciando a seed em `42`
-  antes de cada execução. As execuções começam com a mesma população inicial.
-
 Os experimentos são opcionais e não são iniciados pela execução normal nem
 pela importação dos módulos. Cada comando cria uma pasta numerada nova em
 `resultados_experimentos/`, preservando as anteriores. Como as pastas `_001`
 já estão incluídas, a próxima execução cria `_002`.
 
-Cada pasta contém três MIDIs, gráficos individuais e um JSON com indivíduos,
-fitness final, históricos, seeds, taxas e configurações de exportação.
-O experimento de mutação também salva `comparacao_taxas_mutacao.png`, com
-as três curvas de melhor fitness. Os gráficos são salvos sem abrir janelas.
+Cada pasta contém três MIDIs, gráficos e um JSON com os resultados e as
+configurações da execução. Os gráficos são salvos sem abrir janelas.
 
 ### Músicas incluídas
 
 As três músicas em WAV foram sintetizadas dos MIDIs de `mutacao_001`, com
-FluidSynth e o SoundFont TimGM6mb. Todas usam seed 42, duas voltas e acompanhamento.
+FluidSynth e o SoundFont TimGM6mb.
 
-| Taxa de mutação | MIDI | Áudio WAV | Fitness final |
-| --- | --- | --- | --- |
-| 0,01 | [mutacao_001.mid](resultados_experimentos/mutacao_001/mutacao_001.mid) | [mutacao_001.wav](resultados_experimentos/mutacao_001/mutacao_001.wav) | 431,00 |
-| 0,05 | [mutacao_005.mid](resultados_experimentos/mutacao_001/mutacao_005.mid) | [mutacao_005.wav](resultados_experimentos/mutacao_001/mutacao_005.wav) | 380,50 |
-| 0,15 | [mutacao_015.mid](resultados_experimentos/mutacao_001/mutacao_015.mid) | [mutacao_015.wav](resultados_experimentos/mutacao_001/mutacao_015.wav) | 327,00 |
-
-![Evolução do melhor fitness por taxa de mutação](resultados_experimentos/mutacao_001/comparacao_taxas_mutacao.png)
-
-Os resultados do experimento de seeds estão em
-[resultados_seeds.json](resultados_experimentos/seeds_001/resultados_seeds.json):
-
-| Seed | Taxa de mutação | Fitness final |
+| Música | MIDI | Áudio WAV |
 | --- | --- | --- |
-| 42 | 0,05 | 380,50 |
-| 123 | 0,05 | 389,80 |
-| 999 | 0,05 | 389,90 |
-
-Essas pontuações descrevem as execuções salvas. Um fitness maior indica maior
-pontuação nas heurísticas usadas; a qualidade musical também depende da escuta.
-O histórico atual registra as populações antes da reprodução de cada geração.
-Por isso, a última população retornada não aparece na curva: para mutação
-`0.01`, o gráfico termina em 430 e o fitness final é 431.
+| 1 | [mutacao_001.mid](resultados_experimentos/mutacao_001/mutacao_001.mid) | [mutacao_001.wav](resultados_experimentos/mutacao_001/mutacao_001.wav) |
+| 2 | [mutacao_005.mid](resultados_experimentos/mutacao_001/mutacao_005.mid) | [mutacao_005.wav](resultados_experimentos/mutacao_001/mutacao_005.wav) |
+| 3 | [mutacao_015.mid](resultados_experimentos/mutacao_001/mutacao_015.mid) | [mutacao_015.wav](resultados_experimentos/mutacao_001/mutacao_015.wav) |
 
 Para converter os três MIDIs incluídos novamente:
 
